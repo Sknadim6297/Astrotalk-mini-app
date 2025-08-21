@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wallet API Test</title>
+</head>
+<body>
+    <h1>Wallet API Test</h1>
+    <div id="result"></div>
+    
+    <script>
+        async function testWalletAPI() {
+            const token = localStorage.getItem('api_token');
+            console.log('Token:', token);
+            
+            if (!token) {
+                document.getElementById('result').innerHTML = 'No token found. Please login first.';
+                return;
+            }
+            
+            try {
+                // Test getting balance first
+                const balanceResponse = await fetch('/api/wallet', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const balanceData = await balanceResponse.json();
+                console.log('Balance Response:', balanceData);
+                
+                if (!balanceData.success) {
+                    document.getElementById('result').innerHTML = 'Balance API failed: ' + JSON.stringify(balanceData);
+                    return;
+                }
+                
+                // Test adding money
+                const addResponse = await fetch('/api/wallet/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: 100,
+                        description: 'Test wallet top-up'
+                    })
+                });
+                
+                const addData = await addResponse.json();
+                console.log('Add Money Response:', addData);
+                
+                document.getElementById('result').innerHTML = 
+                    'Balance Response: ' + JSON.stringify(balanceData, null, 2) + 
+                    '<br><br>Add Money Response: ' + JSON.stringify(addData, null, 2);
+                    
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+        
+        // Run test on page load
+        testWalletAPI();
+    </script>
+</body>
+</html>
