@@ -104,8 +104,8 @@
         
         const pusher = new Pusher('{{ env("REVERB_APP_KEY") }}', {
             wsHost: '{{ env("REVERB_HOST") }}',
-            wsPort: {{ env('REVERB_PORT', 8080) }},
-            wssPort: {{ env('REVERB_PORT', 8080) }},
+            wsPort: {{ env('REVERB_PORT', 6001) }},
+            wssPort: {{ env('REVERB_PORT', 6001) }},
             forceTLS: false,
             encrypted: false,
             disableStats: true,
@@ -115,7 +115,7 @@
         log('Pusher client created with config:');
         log(`- Key: {{ env("REVERB_APP_KEY") }}`);
         log(`- Host: {{ env("REVERB_HOST") }}`);
-        log(`- Port: {{ env("REVERB_PORT", 8080) }}`);
+        log(`- Port: {{ env("REVERB_PORT", 6001) }}`);
 
         // Connection event listeners
         pusher.connection.bind('connecting', function() {

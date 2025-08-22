@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Astrologer;
+use App\Events\AvailabilityUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -292,12 +293,23 @@ class AstrologerController extends Controller
     public function getAvailabilityStatus($id): JsonResponse
     {
         try {
-            $astrologer = Astrologer::where('id', $id)
-                                   ->where('status', 'approved')
-                                   ->with('user')
-                                   ->first();
+            // Find user by ID who is an astrologer
+            $user = User::where('id', $id)
+                        ->where('role', 'astrologer')
+                        ->with('astrologerProfile')
+                        ->first();
 
-            if (!$astrologer) {
+            if (!$user || !$user->astrologerProfile) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Astrologer not found'
+                ], 404);
+            }
+
+            $astrologer = $user->astrologerProfile;
+            
+            // Check if astrologer is approved
+            if ($astrologer->status !== 'approved') {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Astrologer not found'
@@ -309,8 +321,8 @@ class AstrologerController extends Controller
             return response()->json([
                 'status' => 'success',
                 'data' => [
-                    'astrologer_id' => $astrologer->id,
-                    'name' => $astrologer->user->name,
+                    'astrologer_id' => $user->id,
+                    'name' => $user->name,
                     'is_online' => $astrologer->is_online,
                     'is_available_now' => $astrologer->isAvailableNow(),
                     'availability_status' => $availabilityStatus,
@@ -345,12 +357,24 @@ class AstrologerController extends Controller
             $isOnline = $request->input('is_online');
             $astrologer->toggleOnlineStatus($isOnline);
 
+            // Get fresh availability status
+            $freshAstrologer = $astrologer->fresh();
+            $statusData = [
+                'is_online' => $freshAstrologer->is_online,
+                'is_available_now' => $freshAstrologer->is_available_now,
+                'today_availability' => $freshAstrologer->today_availability,
+                'last_seen_at' => $freshAstrologer->last_seen_at
+            ];
+
+            // Broadcast the availability update
+            broadcast(new AvailabilityUpdated($freshAstrologer, $statusData));
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Online status updated successfully',
                 'data' => [
-                    'is_online' => $astrologer->fresh()->is_online,
-                    'last_seen_at' => $astrologer->fresh()->last_seen_at
+                    'is_online' => $freshAstrologer->is_online,
+                    'last_seen_at' => $freshAstrologer->last_seen_at
                 ]
             ]);
 
@@ -394,11 +418,23 @@ class AstrologerController extends Controller
 
             $astrologer->setTodayAvailability($request->input('slots'));
 
+            // Get fresh availability status
+            $freshAstrologer = $astrologer->fresh();
+            $statusData = [
+                'is_online' => $freshAstrologer->is_online,
+                'is_available_now' => $freshAstrologer->is_available_now,
+                'today_availability' => $freshAstrologer->today_availability,
+                'last_seen_at' => $freshAstrologer->last_seen_at
+            ];
+
+            // Broadcast the availability update
+            broadcast(new AvailabilityUpdated($freshAstrologer, $statusData));
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Today\'s availability updated successfully',
                 'data' => [
-                    'today_availability' => $astrologer->fresh()->today_availability
+                    'today_availability' => $freshAstrologer->today_availability
                 ]
             ]);
 
@@ -433,13 +469,25 @@ class AstrologerController extends Controller
                 'last_seen_at' => now()
             ]);
 
+            // Get fresh availability status
+            $freshAstrologer = $astrologer->fresh();
+            $statusData = [
+                'is_online' => $freshAstrologer->is_online,
+                'is_available_now' => $freshAstrologer->is_available_now,
+                'today_availability' => $freshAstrologer->today_availability,
+                'last_seen_at' => $freshAstrologer->last_seen_at
+            ];
+
+            // Broadcast the availability update
+            broadcast(new AvailabilityUpdated($freshAstrologer, $statusData));
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Available now status updated successfully',
                 'data' => [
-                    'is_available_now' => $astrologer->fresh()->is_available_now,
-                    'is_online' => $astrologer->is_online,
-                    'availability_status' => $astrologer->fresh()->getAvailabilityStatus()
+                    'is_available_now' => $freshAstrologer->is_available_now,
+                    'is_online' => $freshAstrologer->is_online,
+                    'availability_status' => $freshAstrologer->getAvailabilityStatus()
                 ]
             ]);
 

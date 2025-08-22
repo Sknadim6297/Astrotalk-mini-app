@@ -31,3 +31,20 @@ Broadcast::channel('chat.{bookingId}', function ($user, $bookingId) {
            ($booking->astrologer && $user->id === $booking->astrologer->user_id) || 
            $user->role === 'admin';
 });
+
+// Astrologer availability channel (public channel for availability status)
+Broadcast::channel('astrologer-availability', function () {
+    return true; // Public channel - anyone can listen to availability updates
+});
+
+// Individual astrologer availability channel (private)
+Broadcast::channel('astrologer.{astrologerId}.availability', function ($user, $astrologerId) {
+    // Only the astrologer themselves or admins can listen to their private availability updates
+    return ($user->role === 'astrologer' && $user->astrologer && $user->astrologer->id == $astrologerId) || 
+           $user->role === 'admin';
+});
+
+// Bookings channel for general booking events
+Broadcast::channel('bookings', function () {
+    return true; // Public channel for booking notifications
+});

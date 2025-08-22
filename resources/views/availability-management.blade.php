@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Availability Management - Astrologer</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -201,7 +202,7 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         
         // Base API URL
-        const apiBase = '/for_testing/public/api';
+        const apiBase = '/api';
         
         // Current status
         let currentStatus = {
@@ -209,29 +210,143 @@
             is_available_now: false,
             today_availability: []
         };
+
+        // Initialize Echo for real-time updates
+        function initializeWebSocket() {
+            if (typeof window.Echo !== 'undefined') {
+                // Update Echo auth headers dynamically
+                window.Echo.connector.pusher.config.auth = {
+                    headers: getAuthHeaders()
+                };
+
+                // Listen for availability status changes
+                window.Echo.channel('astrologer-availability')
+                    .listen('AvailabilityUpdated', (e) => {
+                        console.log('Availability updated:', e);
+                        // Update the UI immediately when availability changes
+                        if (e.astrologer_id === getCurrentAstrologerId()) {
+                            currentStatus = e.status;
+                            updateUI();
+                        }
+                    });
+
+                // Listen for booking-related events that might affect availability
+                window.Echo.channel('bookings')
+                    .listen('BookingCreated', (e) => {
+                        console.log('New booking created:', e);
+                        // Refresh status when new bookings are created
+                        loadCurrentStatus();
+                    })
+                    .listen('BookingCompleted', (e) => {
+                        console.log('Booking completed:', e);
+                        // Refresh status when bookings are completed
+                        loadCurrentStatus();
+                    });
+
+                console.log('WebSocket connection initialized');
+            } else {
+                console.warn('Laravel Echo not available, falling back to polling');
+                // Fall back to polling every 30 seconds if Echo is not available
+                setInterval(loadCurrentStatus, 30000);
+            }
+        }
+
+        // Enhanced authentication helper
+        function getAuthHeaders() {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            };
+
+            // Try to get token from localStorage (for SPA mode)
+            const token = localStorage.getItem('token');
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            return headers;
+        }
+
+        // Check authentication status
+        async function checkAuthentication() {
+            try {
+                const response = await fetch('/api/debug/request', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Auth debug:', data);
+                    
+                    if (!data.auth_check && !localStorage.getItem('token')) {
+                        // Neither session nor token auth is working
+                        showAuthError();
+                        return false;
+                    }
+                    return true;
+                } else {
+                    console.error('Auth check failed:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                return false;
+            }
+        }
+
+        function showAuthError() {
+            document.body.innerHTML = `
+                <div class="container mt-5">
+                    <div class="alert alert-danger">
+                        <h4>Authentication Required</h4>
+                        <p>You need to be logged in as an astrologer to access this page.</p>
+                        <p>Please <a href="/auth/login">login</a> first or ensure you have a valid API token.</p>
+                    </div>
+                </div>
+            `;
+        }
+        // Get current astrologer ID (you might need to pass this from the backend)
+        function getCurrentAstrologerId() {
+            // This should be passed from the backend or stored in localStorage
+            return localStorage.getItem('astrologer_id') || null;
+        }
         
         // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCurrentStatus();
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check authentication first
+            const isAuthenticated = await checkAuthentication();
+            if (!isAuthenticated) {
+                return; // Stop initialization if not authenticated
+            }
+
+            // Proceed with normal initialization
+            await loadCurrentStatus();
             setupEventListeners();
+            // Initialize WebSocket connection
+            initializeWebSocket();
         });
         
         // Load current availability status
         async function loadCurrentStatus() {
             try {
                 const response = await fetch(`${apiBase}/astrologer/availability/status`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    }
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: getAuthHeaders()
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
                     currentStatus = data.data;
                     updateUI();
+                } else if (response.status === 401) {
+                    console.error('Authentication failed - please login');
+                    showAuthError();
                 } else {
-                    console.error('Failed to load status');
+                    console.error('Failed to load status:', response.status);
                 }
             } catch (error) {
                 console.error('Error loading status:', error);
@@ -343,11 +458,7 @@
             try {
                 const response = await fetch(`${apiBase}/astrologer/availability/toggle-online`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ is_online: isOnline })
                 });
                 
@@ -366,11 +477,7 @@
             try {
                 const response = await fetch(`${apiBase}/astrologer/availability/toggle-available-now`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ is_available_now: isAvailable })
                 });
                 
@@ -423,11 +530,7 @@
             try {
                 const response = await fetch(`${apiBase}/astrologer/availability/set-today`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ 
                         slots: currentStatus.today_availability || []
                     })
@@ -445,9 +548,6 @@
                 alert('Error saving schedule. Please try again.');
             }
         }
-        
-        // Auto-refresh status every 30 seconds
-        setInterval(loadCurrentStatus, 30000);
     </script>
 </body>
 </html>

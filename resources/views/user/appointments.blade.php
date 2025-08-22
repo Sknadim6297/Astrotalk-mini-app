@@ -72,7 +72,7 @@
                             <div class="space-y-2 text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Rate:</span>
-                                    <span class="font-semibold" x-text="'₹' + (booking.per_minute_rate ?? booking.astrologer?.per_minute_rate || 0) + '/min'"></span>
+                                    <span class="font-semibold" x-text="'₹' + (booking.per_minute_rate || booking.astrologer?.per_minute_rate || 0) + '/min'"></span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Booking Fee:</span>

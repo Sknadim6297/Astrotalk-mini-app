@@ -121,8 +121,8 @@ class ChatInterface {
         // Initialize Pusher client for Reverb
         this.pusher = new Pusher('{{ env("REVERB_APP_KEY") }}', {
             wsHost: '{{ env("REVERB_HOST") }}',
-            wsPort: {{ env('REVERB_PORT', 8080) }},
-            wssPort: {{ env('REVERB_PORT', 8080) }},
+            wsPort: {{ env('REVERB_PORT', 6001) }},
+            wssPort: {{ env('REVERB_PORT', 6001) }},
             forceTLS: false,
             encrypted: false,
             disableStats: true,
@@ -431,12 +431,15 @@ async function checkAstrologerOnlineStatus() {
         @if($booking->user_id === auth()->id())
             // User checking astrologer status
             const astrologerId = {{ $booking->astrologer_id }};
-            const response = await fetch(`/for_testing/public/api/astrologers/${astrologerId}/availability-status`);
+            const response = await fetch(`/api/astrologers/${astrologerId}/availability-status`);
         @else
             // Astrologer - update own last seen
-            const response = await fetch('/for_testing/public/api/astrologer/availability/status', {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const response = await fetch('/api/astrologer/availability/status', {
+                method: 'GET',
+                credentials: 'same-origin',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json'
                 }
             });

@@ -67,8 +67,12 @@ Route::get('/debug-chat', function () {
     return view('debug-chat');
 })->name('debug-chat');
 
-// Availability management for astrologers
-Route::get('/availability-management', function () {
+// Availability management for astrologers (protected route)
+Route::middleware(['auth', 'verified'])->get('/availability-management', function () {
+    // Ensure only astrologers can access this page
+    if (Auth::user()->role !== 'astrologer') {
+        abort(403, 'Access denied. This page is for astrologers only.');
+    }
     return view('availability-management');
 })->name('availability-management');
 

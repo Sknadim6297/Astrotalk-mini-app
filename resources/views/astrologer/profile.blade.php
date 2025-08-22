@@ -214,7 +214,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const astrologerId = {{ $astrologer->id }};
-        const apiBase = '/for_testing/public/api';
+        const apiBase = '/api';
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
