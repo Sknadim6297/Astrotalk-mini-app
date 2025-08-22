@@ -3,6 +3,8 @@
 A comprehensive astrology consultation platform built with Laravel, featuring real-time chat, wallet system, booking management, and availability tracking.
 
 Admin Panel: admin/dashboard
+Username:admin@test.com.
+password:admin123.
 
 ## ✨ Features
 
