@@ -2,23 +2,9 @@
 
 A comprehensive astrology consultation platform built with Laravel, featuring real-time chat, wallet system, booking management, and availability tracking.
 
-![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)
-![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)
-![MySQL](https://img.shields.io/badge/MySQL-8.0+-orange.svg)
-![WebSocket](https://img.shields.io/badge/WebSocket-Reverb-green.svg)
-
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Requirements](#requirements)
-- [Installation & Setup](#installation--setup)
-- [Configuration](#configuration)
-- [API Documentation](#api-documentation)
-- [Features Overview](#features-overview)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
+Admin Panel: admin/dashboard
+Username:admin@test.com.
+password:admin123.
 
 ## ✨ Features
 
@@ -78,10 +64,6 @@ A comprehensive astrology consultation platform built with Laravel, featuring re
 - **Real-time**: Laravel Reverb (WebSocket)
 - **Authentication**: Laravel Sanctum
 - **Frontend**: Blade Templates + Bootstrap 5
-- **Testing**: PHPUnit + Pest
-- **Cache**: Redis (optional)
-- **Queue**: Database/Redis
-
 
 ## 🚀 Installation & Setup
 
@@ -91,37 +73,6 @@ A comprehensive astrology consultation platform built with Laravel, featuring re
 git clone https://github.com/Sknadim6297/strotalk-mini-app.git
 cd astrotalk-mini-app
 ```
-
-### 2. Install Dependencies
-
-```bash
-# Install PHP dependencies
-composer install
-
-# Install Node.js dependencies
-npm install
-```
-
-### 3. Environment Configuration
-
-```bash
-# Copy environment file
-cp .env.example .env
-
-# Generate application key
-php artisan key:generate
-```
-
-### 4. Database Setup
-
-```bash
-# Create database (MySQL)
-mysql -u root -p
-CREATE DATABASE astrotalk_mini;
-EXIT;
-
-
-## 📖 API Documentation
 
 ### Authentication Endpoints
 
@@ -333,11 +284,6 @@ php artisan tinker
    - Top performing astrologers
    - User engagement metrics
    - Session statistics
-
-4. **System Management**
-   - Platform settings
-   - Fee structure
-   - Content moderation
 
 ## 🔒 Security Features
 
